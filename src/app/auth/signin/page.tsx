@@ -19,20 +19,20 @@ export default function SignIn() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background">
-      <div className="w-full max-w-md space-y-8 p-8 rounded-xl border shadow-md dark:border-zinc-800 dark:bg-zinc-900/50">
+    <div className="bg-background flex min-h-screen flex-col items-center justify-center">
+      <div className="w-full max-w-md space-y-8 rounded-xl border p-8 shadow-md dark:border-zinc-800 dark:bg-zinc-900/50">
         <div className="text-center">
-          <h1 className="text-3xl font-semibold tracking-tight mb-3">
+          <h1 className="mb-3 text-3xl font-semibold tracking-tight">
             <span className="font-bold">MLT</span>-Agents
           </h1>
-          <p className="text-sm text-muted-foreground mb-8">
+          <p className="text-muted-foreground mb-8 text-sm">
             Sign in to access your personal AI assistants
           </p>
         </div>
-        
+
         <Button
           variant="outline"
-          className="w-full flex items-center justify-center gap-3 py-6 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          className="flex w-full items-center justify-center gap-3 py-6 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
           onClick={handleGoogleSignIn}
           disabled={isLoading}
         >
