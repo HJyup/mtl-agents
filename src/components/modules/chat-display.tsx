@@ -40,7 +40,7 @@ const EmptyStateDisplay: FC = () => (
       <p className="mb-2 text-2xl font-light text-zinc-900 dark:text-zinc-50">
         <span className="font-semibold">MLT</span>-Agents
         <span className="ml-2 text-xs text-zinc-400 dark:text-zinc-500">
-          0.0.1alpha
+          v0.1beta
         </span>
       </p>
       <p className="text-sm text-zinc-500 opacity-80 dark:text-zinc-400">
