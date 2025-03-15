@@ -6,8 +6,8 @@ import type { RouterOutputs } from "@/trpc/react";
 type CalendarEvent = RouterOutputs["calendar"]["listEvents"]["events"][number];
 
 enum CalendarResponses {
-  EVENT_SCHEDULED = "I've scheduled {eventType} with {person} for {date} from {startTime} to {endTime}.{emailStatus}",
-  CONTACT_FOUND_NO_EVENT = "I found information about {person}{emailStatus}, but couldn't create an event due to missing event details.",
+  EVENT_SCHEDULED = "I've scheduled {eventType} for {date} from {startTime} to {endTime}.",
+  EVENT_SCHEDULED_WITH_ATTENDEE = "I've scheduled {eventType} with {person} for {date} from {startTime} to {endTime}. {emailStatus}",
   INVALID_REQUEST = 'I understand you said: "{message}", but I\'m not sure how to handle that as an event. {reason}',
   NEED_MORE_INFO = "I understood that you want to schedule {eventType}{withPerson}, but I need more information to proceed.",
   ERROR = "I couldn't process your request. {error}",
@@ -38,8 +38,8 @@ export default function useCalendarMode({
   onResponse,
   setIsLoading,
 }: CalendarModeProps) {
-  const listEvents = api.calendar.listEvents.useQuery;
-  const searchContact = api.contacts.searchContact.useQuery;
+  const listEvents = api.calendar.listEvents.useMutation();
+  const searchContact = api.contacts.searchContact.useMutation();
   const analyzeMessage = api.calendar.analyzeMessage.useMutation();
   const createEvent = api.calendar.createEvent.useMutation();
 
@@ -54,11 +54,11 @@ export default function useCalendarMode({
         throw new Error("Failed to get calendar events");
       }
 
-      const result = listEvents({
+      const result = await listEvents.mutateAsync({
         timeMin: times[0].toISOString(),
         timeMax: times[1].toISOString(),
       });
-      return result.data?.events ?? [];
+      return result.events ?? [];
     } catch (error) {
       console.error("Error fetching calendar events:", error);
       return [];
@@ -116,67 +116,62 @@ export default function useCalendarMode({
         });
       }
 
-      if (message.actions.includes("search_contacts") && message.person) {
-        const contactResult = searchContact({ query: message.person });
-
-        let attendeeEmail = "";
-        if (contactResult.data?.success && contactResult.data.contact) {
-          attendeeEmail = contactResult.data.contact.email;
+      let attendeeEmail = undefined;
+      if (message.person) {
+        const contactResult = await searchContact.mutateAsync({
+          query: message.person,
+        });
+        if (contactResult.success && contactResult.contact) {
+          attendeeEmail = contactResult.contact.email;
         }
+      }
 
-        if (
-          message.actions.includes("create_event") &&
-          message.eventDetails?.start &&
-          message.eventDetails?.end
-        ) {
-          const calendarResult = await createEvent.mutateAsync({
-            eventDetails: message.eventDetails,
-            attendeeEmail,
-          });
-
-          setIsLoading(false);
-
-          if (!calendarResult.success) {
-            return null;
-          }
-
-          if (!calendarResult.success) {
-            throw new Error("Calendar API error");
-          }
-
-          const startTime = new Date(message.eventDetails.start.dateTime);
-          const endTime = new Date(message.eventDetails.end.dateTime);
-
-          const emailStatus = attendeeEmail
-            ? formatCalendarResponse(CalendarResponses.EMAIL_SENT, {
-                email: attendeeEmail,
-              })
-            : CalendarResponses.EMAIL_NOT_FOUND;
-
-          return formatCalendarResponse(CalendarResponses.EVENT_SCHEDULED, {
-            eventType: message.eventType,
-            person: message.person,
-            date: startTime.toLocaleDateString(),
-            startTime: startTime.toLocaleTimeString(),
-            endTime: endTime.toLocaleTimeString(),
-            emailStatus,
-          });
-        }
+      if (message.eventDetails?.start && message.eventDetails?.end) {
+        const calendarResult = await createEvent.mutateAsync({
+          eventDetails: message.eventDetails,
+          description: message.description,
+          attendeeEmail,
+        });
 
         setIsLoading(false);
+
+        if (!calendarResult.success) {
+          return null;
+        }
+
+        if (!calendarResult.success) {
+          throw new Error("Calendar API error");
+        }
+
+        const startTime = new Date(message.eventDetails.start.dateTime);
+        const endTime = new Date(message.eventDetails.end.dateTime);
+
         const emailStatus = attendeeEmail
           ? formatCalendarResponse(CalendarResponses.EMAIL_SENT, {
               email: attendeeEmail,
             })
-          : ", but couldn't find their email";
+          : CalendarResponses.EMAIL_NOT_FOUND;
 
-        return formatCalendarResponse(
-          CalendarResponses.CONTACT_FOUND_NO_EVENT,
-          {
-            person: message.person,
-            emailStatus,
-          },
-        );
+        return attendeeEmail
+          ? formatCalendarResponse(
+              CalendarResponses.EVENT_SCHEDULED_WITH_ATTENDEE,
+              {
+                eventType: message.eventType,
+                description: message.description,
+                person: message.person,
+                date: startTime.toLocaleDateString(),
+                startTime: startTime.toLocaleTimeString(),
+                endTime: endTime.toLocaleTimeString(),
+                emailStatus,
+              },
+            )
+          : formatCalendarResponse(CalendarResponses.EVENT_SCHEDULED, {
+              description: message.description,
+              eventType: message.eventType,
+              date: startTime.toLocaleDateString(),
+              startTime: startTime.toLocaleTimeString(),
+              endTime: endTime.toLocaleTimeString(),
+            });
       }
 
       setIsLoading(false);
@@ -220,4 +215,3 @@ export default function useCalendarMode({
 
   return { processMessage };
 }
-

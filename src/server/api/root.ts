@@ -1,8 +1,8 @@
-import { postRouter } from "@/server/api/routers/post";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { calendarRouter } from "./routers/calendar";
 import { contactsRouter } from "./routers/contacts";
 import { chatRouter } from "./routers/chat";
+import { thingsRouter } from "./routers/things";
 
 /**
  * This is the primary router for your server.
@@ -10,10 +10,10 @@ import { chatRouter } from "./routers/chat";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  post: postRouter,
   calendar: calendarRouter,
   contacts: contactsRouter,
   chat: chatRouter,
+  things: thingsRouter,
 });
 
 // export type definition of API

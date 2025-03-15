@@ -14,12 +14,12 @@ export const contactsRouter = createTRPCRouter({
         query: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
-        const token = await googleClient.getAccessToken();
+        const token = ctx.session?.accessToken;
 
         googleClient.setCredentials({
-          access_token: token.token,
+          access_token: token,
         });
 
         const people = google.people({

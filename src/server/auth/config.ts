@@ -14,8 +14,8 @@ declare module "next-auth" {
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
+    accessToken: string;
   }
-
   // interface User {
   //   // ...other properties
   //   // role: UserRole;
@@ -32,6 +32,14 @@ export const authConfig = {
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      authorization: {
+        params: {
+          scope:
+            "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/contacts.readonly",
+          prompt: "consent",
+          access_type: "offline",
+        },
+      },
     }),
     /**
      * ...add more providers here.
@@ -50,6 +58,13 @@ export const authConfig = {
         ...session.user,
         id: token.sub,
       },
+      accessToken: token.accessToken,
     }),
+    jwt: async ({ token, account }) => {
+      if (account) {
+        token.accessToken = account.access_token;
+      }
+      return token;
+    },
   },
 } satisfies NextAuthConfig;

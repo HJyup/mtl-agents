@@ -10,6 +10,7 @@ import { ChatDisplay } from "@/components/modules/chat-display";
 import AuthError from "@/components/modules/auth-error";
 import Loader from "@/components/ui/loader";
 import { AGENTS } from "@/const/agents";
+import useThingsMode from "@/hooks/use-things-agent";
 
 export interface MessageResponse {
   message: string;
@@ -26,8 +27,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  console.log(responses);
-
   const calendarMode = useCalendarMode({
     onResponse: (response: MessageResponse) =>
       setResponses((prev) => [...prev, response]),
@@ -35,6 +34,12 @@ export default function Home() {
   });
 
   const chatMode = useChatMode({
+    onResponse: (response: MessageResponse) =>
+      setResponses((prev) => [...prev, response]),
+    setIsLoading,
+  });
+
+  const thingsMode = useThingsMode({
     onResponse: (response: MessageResponse) =>
       setResponses((prev) => [...prev, response]),
     setIsLoading,
@@ -66,7 +71,12 @@ export default function Home() {
     if (prefixValue === "cl") {
       await calendarMode.processMessage(
         message,
-        responses[responses.length - 1]?.message,
+        responses.map((r) => r.message).join("\n"),
+      );
+    } else if (prefixValue === "th") {
+      await thingsMode.processMessage(
+        message,
+        responses.map((r) => r.message).join("\n"),
       );
     } else {
       await chatMode.processMessage(message);

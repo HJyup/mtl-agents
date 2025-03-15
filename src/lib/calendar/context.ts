@@ -16,8 +16,12 @@ type CalendarEvent = {
 
 const getCalendarContext = async (events: CalendarEvent[]) => {
   return `
-          # Your Calendar Events
-          Here are your existing calendar events that you should consider when scheduling:
+          # My Calendar Events
+          - Here are my existing calendar events that you should consider when scheduling.
+          - When suggesting times for new events, avoid conflicts with these existing events.
+          - Some facts about me. I don't like to be contacted before 8:00 or after 13:00.
+          - For meetings, I prefer to have them in the before 17:00.
+          - I don't like to have meetings on Friday after 17:00.
           
           ${events
             .map((event) => {
@@ -38,8 +42,6 @@ const getCalendarContext = async (events: CalendarEvent[]) => {
               }`;
             })
             .join("\n")}
-          
-          When suggesting times for new events, avoid conflicts with these existing events.
           `;
 };
 

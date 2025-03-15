@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import getCalendarContext from "@/lib/calendar/context";
 import generatePrompt from "@/lib/calendar/prompt";
 
-type Response = {
+export type Response = {
   eventType: string;
   description: string;
   person: string;
@@ -20,7 +20,6 @@ type Response = {
       timeZone: string;
     };
   };
-  actions: string[];
   isValid: boolean;
   reasonInvalid: string;
 };
@@ -75,15 +74,16 @@ export const calendarRouter = createTRPCRouter({
     .input(
       z.object({
         eventDetails: eventDetailsSchema,
+        description: z.string().optional(),
         attendeeEmail: z.string().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
-        const token = await googleClient.getAccessToken();
+        const token = ctx.session?.accessToken;
 
         googleClient.setCredentials({
-          access_token: token.token,
+          access_token: token,
         });
 
         const calendar = google.calendar({
@@ -93,12 +93,13 @@ export const calendarRouter = createTRPCRouter({
 
         const event = {
           summary: input.eventDetails.summary,
-          description: input.eventDetails.description,
+          description: input.description,
           start: input.eventDetails.start,
           end: input.eventDetails.end,
-          attendees: input.attendeeEmail
-            ? [{ email: input.attendeeEmail }]
-            : [],
+          attendees:
+            input.attendeeEmail && input.attendeeEmail !== ""
+              ? [{ email: input.attendeeEmail }]
+              : [],
           reminders: {
             useDefault: true,
           },
@@ -127,12 +128,12 @@ export const calendarRouter = createTRPCRouter({
         timeMax: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
-        const token = await googleClient.getAccessToken();
+        const token = ctx.session?.accessToken;
 
         googleClient.setCredentials({
-          access_token: token.token,
+          access_token: token,
         });
 
         const calendar = google.calendar({
